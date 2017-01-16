@@ -39,7 +39,7 @@ pub fn enable(enable : bool ) -> () {
     let enable : BOOL = enable as i32;
     unsafe { ffi::XInputEnable( enable ); };
 }
-//dwUserIndex : DWORD, devType : BYTE, pBatteryInformation : *mut XINPUT_BATTERY_INFORMATION ) -> DWORD
+
 pub fn get_battery_information( user_index : u32, dev_type : u8) -> Result<BatteryInformation, DeviceError> {
     let raw_user_index : DWORD = user_index;
     let raw_dev_type : BYTE = dev_type;
