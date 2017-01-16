@@ -1,0 +1,23 @@
+[package]
+
+name = "xinput"
+version = "0.1.1"
+authors = ["Michał Mieczkowski <mieczkowski@fastmail.com>"]
+description = "Rust bindings for Xinput library."
+repository = "https://github.com/mmiecz/xinput"
+readme = "README.md"
+keywords = ["xinput", "x360", "xbox"]
+license = "MIT"
+
+[lib]
+name = "xinput"
+
+[[bin]]
+name = "xin"
+
+[dependencies]
+libc = "0.2.19"
+winapi = "0.2.8"
+
+[features]
+unstable = []
