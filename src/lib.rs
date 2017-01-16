@@ -1,0 +1,70 @@
+extern crate libc;
+extern crate winapi;
+
+mod ffi;
+use std::mem;
+use winapi::{ BOOL, DWORD, BYTE };
+
+#[derive(Copy, Clone, Debug)]
+pub enum DeviceError {
+    DeviceOffline,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum BatteryType {
+    Disconnected,
+    Wired,
+    Alkaline,
+    NiMH,
+    Unknown,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum BatteryLevel {
+    Empty,
+    Low,
+    Medium,
+    Full,
+    Unknown,
+}
+
+//TODO: name battery type
+#[derive(Copy, Clone, Debug)]
+pub struct BatteryInformation {
+    pub battery_type : BatteryType,
+    pub battery_level : BatteryLevel,
+}
+
+pub fn enable(enable : bool ) -> () {
+    let enable : BOOL = enable as i32;
+    unsafe { ffi::XInputEnable( enable ); };
+}
+//dwUserIndex : DWORD, devType : BYTE, pBatteryInformation : *mut XINPUT_BATTERY_INFORMATION ) -> DWORD
+pub fn get_battery_information( user_index : u32, dev_type : u8) -> Result<BatteryInformation, DeviceError> {
+    let raw_user_index : DWORD = user_index;
+    let raw_dev_type : BYTE = dev_type;
+    let mut raw_battery_info : winapi::XINPUT_BATTERY_INFORMATION = unsafe { mem::uninitialized() };
+    let raw_result = unsafe { ffi::XInputGetBatteryInformation( raw_user_index, raw_dev_type, &mut raw_battery_info) };
+    if raw_result != winapi::ERROR_SUCCESS { // This will always return ERROR_SUCCESS...
+        return Err(DeviceError::DeviceOffline); // TODO: Create more meaningful errors
+    }
+
+    use winapi::xinput;
+    let battery_type = match raw_battery_info.BatteryType {
+        xinput::BATTERY_TYPE_DISCONNECTED => BatteryType::Disconnected,
+        xinput::BATTERY_TYPE_WIRED => BatteryType::Wired,
+        xinput::BATTERY_TYPE_ALKALINE => BatteryType::Alkaline,
+        xinput::BATTERY_TYPE_NIMH => BatteryType::NiMH,
+        _ => BatteryType::Unknown,
+    };
+
+    let battery_level = match raw_battery_info.BatteryLevel {
+        xinput::BATTERY_LEVEL_EMPTY => BatteryLevel::Empty,
+        xinput::BATTERY_LEVEL_LOW => BatteryLevel::Low,
+        xinput::BATTERY_LEVEL_MEDIUM => BatteryLevel::Medium,
+        xinput::BATTERY_LEVEL_FULL => BatteryLevel::Full,
+        _ => BatteryLevel::Unknown,
+    };
+
+    Ok(BatteryInformation{ battery_type : battery_type, battery_level : battery_level })
+}
