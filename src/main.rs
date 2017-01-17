@@ -1,6 +1,7 @@
 extern crate xinput;
 
 use xinput::*;
+use xinput::battery::*;
 #[cfg(not(test))]
 fn main() {
     println!("Hello World");
