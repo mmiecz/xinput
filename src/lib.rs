@@ -5,105 +5,167 @@ mod ffi;
 pub mod battery;
 
 use std::mem;
-use ffi::{ XInputGetCapabilities, XInputGetState };
-use winapi::{ BOOL, DWORD, BYTE, XINPUT_CAPABILITIES };
+use ffi::{XInputGetCapabilities, XInputGetState};
+use winapi::{BOOL, DWORD, XINPUT_CAPABILITIES};
 
 #[derive(Copy, Clone, Debug)]
 pub enum DeviceError {
     DeviceNotConnected,
 }
 
-pub fn enable(enable : bool ) -> () {
-    let enable : BOOL = enable as i32;
-    unsafe { ffi::XInputEnable( enable ); };
+///Turn on communication with the controller.
+pub fn enable(enable: bool) -> () {
+    let enable: BOOL = enable as i32;
+    unsafe {
+        ffi::XInputEnable(enable);
+    };
 }
 
-//pub struct Gamepad XINPUT_GAMEPAD
 //pub struct Vibration XINPUT_VIBRATION
+
+///Represents state of buttons, triggers, etc. of the controller.
 #[derive(Clone, Copy, Debug)]
 pub struct InputGamepad {
-    pub wButtons : u16,
-    pub bLeftTrigger : u8,
-    pub bRightTrigger : u8,
-    pub sThumbLX : i16,
-    pub sThumbLY : i16,
-    pub sThumbRX : i16,
-    pub sThumbRY : i16,
+    pub w_buttons: u16,
+    pub b_left_trigger: u8,
+    pub b_right_trigger: u8,
+    pub s_thumb_lx: i16,
+    pub s_thumb_ly: i16,
+    pub s_thumb_rx: i16,
+    pub s_thumb_ry: i16,
 }
 
 impl InputGamepad {
     pub fn new() -> InputGamepad {
-        InputGamepad{ wButtons : 0, bLeftTrigger : 0, bRightTrigger : 0,
-            sThumbLX : 0, sThumbLY : 0, sThumbRX : 0, sThumbRY : 0
+        InputGamepad {
+            w_buttons: 0,
+            b_left_trigger: 0,
+            b_right_trigger: 0,
+            s_thumb_lx: 0,
+            s_thumb_ly: 0,
+            s_thumb_rx: 0,
+            s_thumb_ry: 0,
         }
     }
-    fn from_raw( raw_gamepad : &winapi::XINPUT_GAMEPAD) -> InputGamepad {
-        let wButtons = raw_gamepad.wButtons;
-        let bLeftTrigger = raw_gamepad.bLeftTrigger;
-        let bRightTrigger = raw_gamepad.bRightTrigger;
-        let sThumbLY = raw_gamepad.sThumbLY;
-        let sThumbLX = raw_gamepad.sThumbLX;
-        let sThumbRX = raw_gamepad.sThumbRX;
-        let sThumbRY = raw_gamepad.sThumbRY;
+    fn from_raw(raw_gamepad: &winapi::XINPUT_GAMEPAD) -> InputGamepad {
+        let w_buttons = raw_gamepad.wButtons;
+        let b_left_trigger = raw_gamepad.bLeftTrigger;
+        let b_right_trigger = raw_gamepad.bRightTrigger;
+        let s_thumb_lx = raw_gamepad.sThumbLX;
+        let s_thumb_ly = raw_gamepad.sThumbLY;
+        let s_thumb_rx = raw_gamepad.sThumbRX;
+        let s_thumb_ry = raw_gamepad.sThumbRY;
 
-        InputGamepad{ wButtons : wButtons, bLeftTrigger : bLeftTrigger,
-            bRightTrigger : bRightTrigger, sThumbLY : sThumbLY, sThumbLX : sThumbLX,
-            sThumbRX : sThumbRX, sThumbRY : sThumbRY }
+        InputGamepad {
+            w_buttons: w_buttons,
+            b_left_trigger: b_left_trigger,
+            b_right_trigger: b_right_trigger,
+            s_thumb_lx: s_thumb_lx,
+            s_thumb_ly: s_thumb_ly,
+            s_thumb_rx: s_thumb_rx,
+            s_thumb_ry: s_thumb_ry,
+        }
 
     }
 }
 
 pub struct InputState {
-    pub packet_number : u32,
-    pub input_gamepad : InputGamepad,
+    pub packet_number: u32,
+    pub input_gamepad: InputGamepad,
 }
 
 impl InputState {
     pub fn new() -> InputState {
-        InputState{ packet_number : 0, input_gamepad : InputGamepad::new() }
+        InputState {
+            packet_number: 0,
+            input_gamepad: InputGamepad::new(),
+        }
     }
 
-    fn from_raw(raw : &winapi::XINPUT_STATE) -> InputState {
-        InputState { packet_number : raw.dwPacketNumber,
-            input_gamepad : InputGamepad::from_raw(&raw.Gamepad) }
+    fn from_raw(raw: &winapi::XINPUT_STATE) -> InputState {
+        InputState {
+            packet_number: raw.dwPacketNumber,
+            input_gamepad: InputGamepad::from_raw(&raw.Gamepad),
+        }
     }
+}
+
+struct InputVibration {
+    w_left_motor_speed: u16,
+    w_right_motor_speed: u16,
+}
+
+impl InputVibration {
+    pub fn new(left_motor_speed: u16, right_motor_speed: u16) -> InputVibration {
+        InputVibration {
+            w_left_motor_speed: left_motor_speed,
+            w_right_motor_speed: right_motor_speed,
+        }
+    }
+    fn to_raw(&self) -> winapi::XINPUT_VIBRATION {
+        winapi::XINPUT_VIBRATION {
+            wLeftMotorSpeed: self.w_left_motor_speed,
+            wRightMotorSpeed: self.w_right_motor_speed,
+        }
+    }
+}
+
+pub fn set_state(user_index: u32, left_motor_speed: u16, right_motor_speed: u16) {
+    let mut raw_vib = InputVibration::new(left_motor_speed, right_motor_speed).to_raw();
+    let raw_result = unsafe { ffi::XInputSetState(user_index, &mut raw_vib) };
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct DeviceCapabilities {
-    pub typ : u8,
-    pub subtype : u8,
-    pub flags : u16,
-    pub gamepad : InputGamepad
-    //pub vibration : Vibration
+    pub dev_type: u8,
+    pub dev_subtype: u8,
+    pub flags: u16,
+    pub gamepad: InputGamepad, //pub vibration : Vibration
 }
 
-//pub fn XInputGetCapabilities( dwUserIndex : DWORD, dwFlags : DWORD, pCapabilities : *mut XINPUT_CAPABILITIES) -> DWORD;
-pub fn get_capabilities( user_index : u32, flags : u32) -> Result<DeviceCapabilities, DeviceError> {
-    let raw_index : DWORD = user_index;
-    let mut raw_caps : XINPUT_CAPABILITIES = unsafe { mem::zeroed() };
-    let raw_result = unsafe { XInputGetCapabilities( raw_index, winapi::XINPUT_FLAG_GAMEPAD, &mut raw_caps)};
+impl DeviceCapabilities {
+    pub fn new() -> DeviceCapabilities {
+        DeviceCapabilities {
+            dev_type: 0,
+            dev_subtype: 0,
+            flags: 0,
+            gamepad: InputGamepad::new(),
+        }
+    }
+
+    fn from_raw(raw: &winapi::XINPUT_CAPABILITIES) -> DeviceCapabilities {
+        let dev_type = raw.Type;
+        let dev_subtype = raw.SubType;
+        let flags = raw.Flags;
+        let gamepad = InputGamepad::from_raw(&raw.Gamepad);
+        DeviceCapabilities {
+            dev_type: dev_type,
+            dev_subtype: dev_subtype,
+            flags: flags,
+            gamepad: gamepad,
+        }
+    }
+}
+
+pub fn get_capabilities(user_index: u32, flags: u32) -> Result<DeviceCapabilities, DeviceError> {
+    let raw_index: DWORD = user_index;
+    let mut raw_caps: XINPUT_CAPABILITIES = unsafe { mem::zeroed() };
+    let raw_result =
+        unsafe { XInputGetCapabilities(raw_index, winapi::XINPUT_FLAG_GAMEPAD, &mut raw_caps) };
 
     if raw_result == winapi::winerror::ERROR_DEVICE_NOT_CONNECTED {
         return Err(DeviceError::DeviceNotConnected);
     }
 
-    let typ : u8 = raw_caps.Type;
-    let subtype : u8 = raw_caps.SubType;
-    let flags : u16 = raw_caps.Flags;
-    let raw_input_gamepad : winapi::XINPUT_GAMEPAD = raw_caps.Gamepad;
-    let gamepad = InputGamepad::from_raw(&raw_caps.Gamepad);
-
-    Ok( DeviceCapabilities{ typ: typ, subtype : subtype, flags : flags, gamepad : gamepad})
+    Ok(DeviceCapabilities::from_raw(&raw_caps))
 }
 
-//pub fn XInputGetState( dwUserIndex : DWORD, pState : *mut XINPUT_STATE) -> DWORD;
-pub fn get_input_state(user_index : u32) -> Result<InputState, DeviceError> {
-    let mut raw_input_state : winapi::XINPUT_STATE = unsafe { mem::zeroed() };
-    let raw_user_index : DWORD = user_index;
-    let raw_result = unsafe { XInputGetState( raw_user_index, &mut raw_input_state)};
+pub fn get_input_state(user_index: u32) -> Result<InputState, DeviceError> {
+    let mut raw_input_state: winapi::XINPUT_STATE = unsafe { mem::zeroed() };
+    let raw_user_index: DWORD = user_index;
+    let raw_result = unsafe { XInputGetState(raw_user_index, &mut raw_input_state) };
     if raw_result == winapi::winerror::ERROR_DEVICE_NOT_CONNECTED {
         return Err(DeviceError::DeviceNotConnected);
     }
-    Ok( InputState::from_raw(&raw_input_state) )
+    Ok(InputState::from_raw(&raw_input_state))
 }
