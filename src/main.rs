@@ -2,6 +2,8 @@ extern crate xinput;
 
 use xinput::*;
 use xinput::battery::*;
+use xinput::vibration::*;
+use xinput::input::*;
 
 #[cfg(not(test))]
 fn main() {
@@ -10,7 +12,7 @@ fn main() {
     let caps = get_capabilities(0, 0).unwrap();
     println!("{:?}\n{:?}", batt, caps);
 
-    set_state(0, 32000, 16000);
+    set_vibration(0, 64000, 64000);
 
     use std::{thread, time};
     let ten_millis = time::Duration::from_millis(100);
@@ -21,6 +23,5 @@ fn main() {
                  input.packet_number,
                  input.input_gamepad);
     }
-
     enable(false);
 }

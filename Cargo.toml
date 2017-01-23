@@ -18,6 +18,4 @@ name = "xin"
 [dependencies]
 libc = "0.2.19"
 winapi = "0.2.8"
-
-[features]
-unstable = []
+bitflags = "0.7.0"
