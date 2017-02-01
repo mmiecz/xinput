@@ -1,10 +1,10 @@
 use ffi;
 use winapi;
-use winapi::{ DWORD };
+use winapi::DWORD;
 use std::mem;
 
-use ::DeviceError;
-use ::InputState;
+use DeviceError;
+use InputState;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Gamepad {
