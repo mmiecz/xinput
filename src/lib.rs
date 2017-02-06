@@ -6,10 +6,12 @@ pub mod battery;
 pub mod vibration;
 pub mod input;
 
-use std::mem;
 use ffi::{XInputGetCapabilities, XInputGetState};
-use input::Gamepad;
 use winapi::{BOOL, DWORD, XINPUT_CAPABILITIES};
+use std::mem;
+use input::Gamepad;
+use std::convert::From;
+
 
 #[derive(Copy, Clone, Debug)]
 pub enum DeviceError {
@@ -41,18 +43,15 @@ impl DeviceCapabilities {
             gamepad: Gamepad::new(),
         }
     }
+}
 
-    fn from_raw(raw: &winapi::XINPUT_CAPABILITIES) -> DeviceCapabilities {
-        let dev_type = raw.Type;
-        let dev_subtype = raw.SubType;
-        let gamepad = Gamepad::from(raw.Gamepad);
-        let flags = raw.Flags;
-
+impl From<winapi::XINPUT_CAPABILITIES> for DeviceCapabilities {
+    fn from(raw: XINPUT_CAPABILITIES) -> DeviceCapabilities {
         DeviceCapabilities {
-            dev_type: dev_type,
-            dev_subtype: dev_subtype,
-            flags: flags,
-            gamepad: gamepad,
+            dev_type : raw.Type,
+            dev_subtype: raw.SubType,
+            flags: raw.Flags,
+            gamepad: Gamepad::from(raw.Gamepad),
         }
     }
 }
@@ -67,5 +66,5 @@ pub fn get_capabilities(user_index: u32, flags: u32) -> Result<DeviceCapabilitie
         return Err(DeviceError::DeviceNotConnected);
     }
 
-    Ok(DeviceCapabilities::from_raw(&raw_caps))
+    Ok(DeviceCapabilities::from(raw_caps))
 }
