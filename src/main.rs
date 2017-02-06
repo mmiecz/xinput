@@ -12,7 +12,7 @@ fn main() {
     let caps = get_capabilities(0, 0).unwrap();
     println!("{:?}\n{:?}", batt, caps);
 
-    set_vibration(0, 64000, 64000);
+    set_vibration(0, 64000, 64000).unwrap();
 
     use std::{thread, time};
     let ten_millis = time::Duration::from_millis(100);

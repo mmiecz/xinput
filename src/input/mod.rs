@@ -2,9 +2,9 @@ use ffi;
 use winapi;
 use winapi::DWORD;
 use std::mem;
+use std::convert::From;
 
 use DeviceError;
-use InputState;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Gamepad {
@@ -17,19 +17,8 @@ pub struct Gamepad {
     pub s_thumb_ry: i16,
 }
 
-impl Gamepad {
-    pub fn new() -> Gamepad {
-        Gamepad {
-            w_buttons: 0,
-            b_left_trigger: 0,
-            b_right_trigger: 0,
-            s_thumb_lx: 0,
-            s_thumb_ly: 0,
-            s_thumb_rx: 0,
-            s_thumb_ry: 0,
-        }
-    }
-    pub fn from_raw(raw_gamepad: &winapi::XINPUT_GAMEPAD) -> Gamepad {
+impl From<winapi::XINPUT_GAMEPAD> for Gamepad {
+    fn from(raw_gamepad : winapi::XINPUT_GAMEPAD ) -> Gamepad {
         let w_buttons = raw_gamepad.wButtons;
         let b_left_trigger = raw_gamepad.bLeftTrigger;
         let b_right_trigger = raw_gamepad.bRightTrigger;
@@ -49,6 +38,43 @@ impl Gamepad {
     }
 }
 
+impl Gamepad {
+    pub fn new() -> Gamepad {
+        Gamepad {
+            w_buttons: 0,
+            b_left_trigger: 0,
+            b_right_trigger: 0,
+            s_thumb_lx: 0,
+            s_thumb_ly: 0,
+            s_thumb_rx: 0,
+            s_thumb_ry: 0,
+        }
+    }
+}
+
+pub struct InputState {
+    pub packet_number: u32,
+    pub input_gamepad: Gamepad,
+}
+
+impl InputState {
+    pub fn new() -> InputState {
+        InputState {
+            packet_number: 0,
+            input_gamepad: Gamepad::new(),
+        }
+    }
+}
+
+impl From<winapi::XINPUT_STATE> for InputState {
+    fn from(raw : winapi::XINPUT_STATE) -> InputState {
+        InputState {
+            packet_number: raw.dwPacketNumber,
+            input_gamepad: Gamepad::from(raw.Gamepad),
+        }
+    }
+}
+
 pub fn get_input_state(user_index: u32) -> Result<InputState, DeviceError> {
     let mut raw_input_state: winapi::XINPUT_STATE = unsafe { mem::zeroed() };
     let raw_user_index: DWORD = user_index;
@@ -56,5 +82,5 @@ pub fn get_input_state(user_index: u32) -> Result<InputState, DeviceError> {
     if raw_result == winapi::winerror::ERROR_DEVICE_NOT_CONNECTED {
         return Err(DeviceError::DeviceNotConnected);
     }
-    Ok(InputState::from_raw(&raw_input_state))
+    Ok(InputState::from(raw_input_state))
 }

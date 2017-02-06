@@ -24,27 +24,6 @@ pub fn enable(enable: bool) -> () {
     };
 }
 
-pub struct InputState {
-    pub packet_number: u32,
-    pub input_gamepad: Gamepad,
-}
-
-impl InputState {
-    pub fn new() -> InputState {
-        InputState {
-            packet_number: 0,
-            input_gamepad: Gamepad::new(),
-        }
-    }
-
-    fn from_raw(raw: &winapi::XINPUT_STATE) -> InputState {
-        InputState {
-            packet_number: raw.dwPacketNumber,
-            input_gamepad: Gamepad::from_raw(&raw.Gamepad),
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug)]
 pub struct DeviceCapabilities {
     pub dev_type: u8,
@@ -66,8 +45,9 @@ impl DeviceCapabilities {
     fn from_raw(raw: &winapi::XINPUT_CAPABILITIES) -> DeviceCapabilities {
         let dev_type = raw.Type;
         let dev_subtype = raw.SubType;
+        let gamepad = Gamepad::from(raw.Gamepad);
         let flags = raw.Flags;
-        let gamepad = Gamepad::from_raw(&raw.Gamepad);
+
         DeviceCapabilities {
             dev_type: dev_type,
             dev_subtype: dev_subtype,

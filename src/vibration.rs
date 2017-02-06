@@ -25,12 +25,6 @@ impl Vibration {
             w_right_motor_speed: right_motor_speed,
         }
     }
-    fn to_raw(&self) -> winapi::XINPUT_VIBRATION {
-        winapi::XINPUT_VIBRATION {
-            wLeftMotorSpeed: self.w_left_motor_speed,
-            wRightMotorSpeed: self.w_right_motor_speed,
-        }
-    }
 }
 
 //TODO: Return Restult<(), DeviceError>
@@ -41,7 +35,7 @@ pub fn set_vibration(user_index: u32,
     let mut raw_vib = Vibration::new(left_motor_speed, right_motor_speed).into();
     let raw_result = unsafe { ffi::XInputSetState(user_index, &mut raw_vib) };
     match raw_result {
-        0 => Ok(()),
+        winapi::ERROR_SUCCESS => Ok(()),
         _ => Err(DeviceError::DeviceNotConnected),
     }
 }
