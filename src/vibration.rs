@@ -27,7 +27,6 @@ impl Vibration {
     }
 }
 
-//TODO: Return Restult<(), DeviceError>
 pub fn set_vibration(user_index: u32,
                      left_motor_speed: u16,
                      right_motor_speed: u16)

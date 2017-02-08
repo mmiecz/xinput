@@ -12,7 +12,7 @@ use std::mem;
 use input::Gamepad;
 use std::convert::From;
 
-
+//TODO: Do Errors!
 #[derive(Copy, Clone, Debug)]
 pub enum DeviceError {
     DeviceNotConnected,

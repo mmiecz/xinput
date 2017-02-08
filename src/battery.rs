@@ -22,7 +22,6 @@ pub enum BatteryLevel {
     Unknown,
 }
 
-//TODO: name battery type
 #[derive(Copy, Clone, Debug)]
 pub struct BatteryInformation {
     pub battery_type: BatteryType,
@@ -40,7 +39,7 @@ pub fn get_battery_information(user_index: u32,
         ffi::XInputGetBatteryInformation(raw_user_index, raw_dev_type, &mut raw_battery_info)
     };
     if raw_result == winapi::winerror::ERROR_DEVICE_NOT_CONNECTED {
-        return Err(DeviceError::DeviceNotConnected); // TODO: Create more meaningful errors
+        return Err(DeviceError::DeviceNotConnected);
     }
 
     let battery_type = match raw_battery_info.BatteryType {
